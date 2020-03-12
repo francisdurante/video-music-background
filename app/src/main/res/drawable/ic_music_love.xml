@@ -1,0 +1,23 @@
+<vector android:height="35dp" android:viewportHeight="584.93"
+    android:viewportWidth="584.93" android:width="35dp"
+    xmlns:aapt="http://schemas.android.com/aapt" xmlns:android="http://schemas.android.com/apk/res/android">
+    <path android:fillAlpha="0.5" android:fillColor="#15ffdf"
+        android:pathData="M292.47,292.47m-292.47,0a292.47,292.47 0,1 1,584.94 0a292.47,292.47 0,1 1,-584.94 0" android:strokeAlpha="0.5"/>
+    <path android:fillColor="#d12042" android:pathData="M245.57,239.71a81.56,81.56 0,0 0,-12.5 13.62l-48.28,-40.5h0l-47.64,-5.89L105,180a9.24,9.24 0,0 1,5.13 -16.27l27.57,-2.41h0l-2.39,-27.6a9.24,9.24 0,0 1,15.13 -7.88l32.12,27 14.06,45.88h0Z"/>
+    <path android:pathData="M441.71,218.46a79.41,79.41 0,0 0,-59.11 -25.73,74.32 74.32,0 0,0 -46.43,16 94.65,94.65 0,0 0,-18.77 19.62,94.71 94.71,0 0,0 -18.78,-19.62 74.3,74.3 0,0 0,-46.43 -16,79.46 79.46,0 0,0 -59.12,25.73c-15.12,16.4 -23.44,38.8 -23.44,63.08 0,25 9.32,47.88 29.31,72 17.89,21.59 43.6,43.5 73.38,68.88 10.16,8.65 21.69,18.47 33.65,28.94a17.3,17.3 0,0 0,22.84 0c12,-10.46 23.5,-20.29 33.67,-29C392.25,397 418,375.12 435.85,353.54c20,-24.13 29.31,-47 29.31,-72C465.17,257.26 456.84,234.86 441.71,218.46Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:centerX="317.4"
+                android:centerY="324.18997"
+                android:gradientRadius="139.85" android:type="radial">
+                <item android:color="#FFFF5A58" android:offset="0"/>
+                <item android:color="#FFFF5656" android:offset="0.17"/>
+                <item android:color="#FFFF4950" android:offset="0.36"/>
+                <item android:color="#FFFF3545" android:offset="0.54"/>
+                <item android:color="#FFFF1836" android:offset="0.72"/>
+                <item android:color="#FFFF1535" android:offset="0.74"/>
+                <item android:color="#FFF21635" android:offset="1"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:fillColor="#d12042" android:pathData="M474.74,456.79l-50.08,4.38c-15.18,1.33 -29,-9.61 -30.48,-24.77A27.77,27.77 0,0 1,412 407.68m0,-0.05 l-49.43,-41.49 -15.87,-13.3a9.48,9.48 0,1 1,13.52 -12.73l63.66,53.4h0A27.78,27.78 0,0 1,449.09 371c15.19,-1.15 28.35,10.53 29.69,25.72l4.38,50.08a9.24,9.24 0,0 1,-8.41 10h0Z"/>
+</vector>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="5sp"
+    android:gravity="center">
+    <ImageView
+        android:adjustViewBounds="true"
+        android:id="@+id/music_thumbnail"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxWidth="100sp"
+        android:maxHeight="100sp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <TextView
+            android:layout_margin="2sp"
+            android:id="@+id/music_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Music Title"
+            android:textColor="#000"
+            android:textSize="12sp"
+            android:textStyle="bold"/>
+        <TextView
+            android:layout_margin="2sp"
+            android:id="@+id/music_artist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Music Artist"
+            android:textColor="#b4b4b4"
+            android:textSize="9sp"/>
+        <TextView
+            android:layout_margin="2sp"
+            android:id="@+id/music_duration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1:04"
+            android:textColor="#b4b4b4"
+            android:textSize="9sp"/>
+    </LinearLayout>
+
+</LinearLayout>
+</RelativeLayout>

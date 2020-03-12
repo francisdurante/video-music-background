@@ -1,3 +1,17 @@
 <resources>
     <string name="app_name">VideoMusic</string>
+    <string name="separator"> | </string>
+    <string name="_15_secs">15s</string>
+    <string name="_30_secs">30s</string>
+    <string name="search_music_name">Search music Name</string>
+    <string name="musics">Musics</string>
+    <string name="all">All</string>
+    <string name="new_music">New</string>
+    <string name="i_heart_music">iHeart</string>
+    <string name="opm_music">OPM</string>
+    <string name="kpop_music">K-Pop</string>
+    <string name="dance_music">Dance</string>
+    <string name="electro_music">Electro</string>
+    <string name="dub">Dubs</string>
+    <string name="sounds">Sounds</string>
 </resources>
