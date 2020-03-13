@@ -1,0 +1,117 @@
+{
+  "project_info": {
+    "project_number": "360423613757",
+    "firebase_url": "https://fleek-test.firebaseio.com",
+    "project_id": "fleek-test",
+    "storage_bucket": "fleek-test.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:360423613757:android:9f49e823552d39787b5154",
+        "android_client_info": {
+          "package_name": "com.myphone.myoneworld"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "360423613757-8umloaj6l9aqcievbts9c1292k8n7ece.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.myphone.myoneworld",
+            "certificate_hash": "0fded9d7fcfc19c682ab431adab122e65475f902"
+          }
+        },
+        {
+          "client_id": "360423613757-5ep91c4n6mvvfsbh8mqndcdejpud325i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.myphone.myoneworld",
+            "certificate_hash": "d09857e4f8b4d9baa6ba192fb8b2643c949fdc1c"
+          }
+        },
+        {
+          "client_id": "360423613757-t55h3pe5a0olongcecs92rd2go676q2v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.myphone.myoneworld",
+            "certificate_hash": "b8410d820e3010ae061eae910db68494d3b17e9f"
+          }
+        },
+        {
+          "client_id": "360423613757-89v6octaqain6qtc96i8ntj7kb2qjfsm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.myphone.myoneworld",
+            "certificate_hash": "8b52a6807c3dd71b6ce6e67d95937b640e5ab19a"
+          }
+        },
+        {
+          "client_id": "360423613757-mnb522mgam6s1bf3rfeusn5u4vqu51q3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.myphone.myoneworld",
+            "certificate_hash": "de558116e551c0a49316106aaeccab76eeda4c0d"
+          }
+        },
+        {
+          "client_id": "360423613757-h6gnisagtus4ltogeghnf8d5uj7jfpmr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB1-Je896QQHWg8zHmDqYPPehdulhbw0XM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "360423613757-h6gnisagtus4ltogeghnf8d5uj7jfpmr.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:360423613757:android:9d0e7ce15a968a4a7b5154",
+        "android_client_info": {
+          "package_name": "com.video.videomusic"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "360423613757-p5s1i2gqn1fo7of5csuqh97smohui6r5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.video.videomusic",
+            "certificate_hash": "0fded9d7fcfc19c682ab431adab122e65475f902"
+          }
+        },
+        {
+          "client_id": "360423613757-h6gnisagtus4ltogeghnf8d5uj7jfpmr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB1-Je896QQHWg8zHmDqYPPehdulhbw0XM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "360423613757-h6gnisagtus4ltogeghnf8d5uj7jfpmr.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

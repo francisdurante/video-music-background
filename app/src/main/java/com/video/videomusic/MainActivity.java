@@ -2,8 +2,6 @@ package com.video.videomusic;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -24,8 +22,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import java.io.File;
@@ -59,11 +55,14 @@ public class MainActivity extends Activity {
     private static final int MY_WRITE_REQUEST_CODE = 102;
     private static final int MY_RECORD_AUDIO_REQUEST_CODE = 103;
     boolean inPreview = false;
-    private int selectedDuration = 30;
+    private int selectedDuration = 30000;
     TextView thirtyDuration = null;
     TextView fifteenDuration = null;
+    TextView selectedMusic = null;
     CountDownTimer timer;
     ImageButton musicGallery;
+    static boolean isSelectedMusic = false;
+    static String musicName = "";
 
     /** Called when the activity is first created. */
     @Override
@@ -112,7 +111,7 @@ public class MainActivity extends Activity {
                         finish();
                     }
                     mediaRecorder.start();
-                    if(mediaPlayer != null) {
+                    if(mediaPlayer != null && isSelectedMusic) {
                         mediaPlayer.start();
                     }
                     recording = true;
@@ -159,18 +158,20 @@ public class MainActivity extends Activity {
         mediaRecorder.setCamera(myCamera);
         String path = Environment.getExternalStorageDirectory() + "/Android/data/"+getPackageName()+"/music/";
         musicPath = path + "test_1.mp3";
+
         int duration = selectedDuration;
-        if(!"".equals(musicPath)) {
-            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
+
+        tempPath = getFile().getPath();
+
+        if(!"".equals(musicPath) && isSelectedMusic) {
             mediaPlayer = MediaPlayer.create(context, Uri.parse(musicPath));
             duration = mediaPlayer.getDuration();
-        }else{
-            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
+            tempPath = tempGetFile().getPath();
         }
+        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
         mediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
 
         mediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_480P));
-        tempPath = tempGetFile().getPath();
         mediaRecorder.setOutputFile(tempPath);
 
         timer = new CountDownTimer(duration, 1000) {
@@ -291,6 +292,7 @@ public class MainActivity extends Activity {
 
 
     }
+
     public static void setCameraDisplayOrientation(Activity activity,int cameraId, android.hardware.Camera camera) {
 
         android.hardware.Camera.CameraInfo info =
@@ -328,6 +330,7 @@ public class MainActivity extends Activity {
 
         return new File(folder,fileName());
     }
+
     public File tempGetFile()
     {
         File folder = new File(Environment.getExternalStorageDirectory() + "/Android/data/"+getPackageName()+"/cache");
@@ -347,13 +350,19 @@ public class MainActivity extends Activity {
         return "Fleek-" + dateFormat.format(date) + ".mp4";
     }
 
-    public String addMusic(String videoInput, String audioInput, String output, Context context) {
-        String command = "-i " + videoInput + " -i " + audioInput + " -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 -shortest " + output ;
-        String path = "";
-        if(executeCMD(command)) {
-            path = output;
+    public String addMusic(String videoInput, String audioInput, String output, Context context)
+    {
+        String command;
+        if(isSelectedMusic) {
+            command = "-i " + videoInput + " -i " + audioInput + " -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 -shortest " + output;
+        }else {
+            command = "-i " + videoInput +" -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 -shortest " + output;
         }
-        return  path;
+            String path = "";
+            if (executeCMD(command)) {
+                path = output;
+            }
+            return path;
     }
 
     private boolean executeCMD(String cmd)
@@ -418,6 +427,8 @@ public class MainActivity extends Activity {
         thirtyDuration = findViewById(R.id.thirty_duration);
         fifteenDuration = findViewById(R.id.fifteen_duration);
 
+        selectedMusic = findViewById(R.id.music_selected);
+
         thirtyDuration.setTextSize(15);
         thirtyDuration.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -443,6 +454,12 @@ public class MainActivity extends Activity {
                 startActivity(new Intent(context,MusicGallery.class));
             }
         });
+        selectedMusic.setVisibility(View.GONE);
+        selectedMusic.setSelected(true);
+        if(isSelectedMusic){
+            selectedMusic.setVisibility(View.VISIBLE);
+            selectedMusic.setText(musicName);
+        }
     }
 
     public void stopRecording()
@@ -455,13 +472,8 @@ public class MainActivity extends Activity {
         releaseMediaRecorder(); // release the MediaRecorder object
         String path = Environment.getExternalStorageDirectory() + "/Android/data/"+getPackageName()+"/music/";
         musicPath = path + "test_1.mp3";
-        Intent intent = new Intent(this,MusicGallery.class);
-        String VideoPath = addMusic(tempPath,musicPath,getFile().getPath(),context);
-        intent.putExtra("temp_path",VideoPath);
-        startActivity(intent);
-        //Exit after saved
-        //finish();
-//        myButton.setText("REC");
+        addMusic(tempPath,musicPath,getFile().getPath(),context);
+        //return to web
         timer.cancel();
         recording = false;
     }
@@ -489,10 +501,5 @@ public class MainActivity extends Activity {
             e.printStackTrace();
         }
         myCamera.startPreview();
-    }
-
-    public String getURLForResource (int resourceId) {
-        //use BuildConfig.APPLICATION_ID instead of R.class.getPackage().getName() if both are not same
-        return Uri.parse("android.resource://"+R.class.getPackage().getName()+"/" +resourceId).toString();
     }
 }

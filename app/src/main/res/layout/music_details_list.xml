@@ -12,8 +12,8 @@
         android:id="@+id/music_thumbnail"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:maxWidth="100sp"
-        android:maxHeight="100sp"/>
+        android:maxWidth="50sp"
+        android:maxHeight="50sp"/>
 
     <LinearLayout
         android:layout_width="match_parent"

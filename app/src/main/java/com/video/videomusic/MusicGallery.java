@@ -2,8 +2,10 @@ package com.video.videomusic;
 
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Environment;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -13,24 +15,24 @@ import android.view.WindowManager;
 import android.widget.GridView;
 import android.widget.ImageView;
 
-import java.io.BufferedInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URL;
-import java.net.URLConnection;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+import java.util.ArrayList;
 
 public class MusicGallery extends AppCompatActivity {
-
+    Context context = this;
     private ProgressDialog pDialog;
     public static final int progress_bar_type = 0;
     private GridView gridView;
-    private String [] MUSICS = {"https://mercercognitivepsychology.pbworks.com/f/1384897684/colorful_note.jpg",
-    "https://mercercognitivepsychology.pbworks.com/f/1384897684/colorful_note.jpg","https://mercercognitivepsychology.pbworks.com/f/1384897684/colorful_note.jpg",
-    "https://mercercognitivepsychology.pbworks.com/f/1384897684/colorful_note.jpg","https://mercercognitivepsychology.pbworks.com/f/1384897684/colorful_note.jpg",
-    "https://mercercognitivepsychology.pbworks.com/f/1384897684/colorful_note.jpg"};
     ImageView musicBack;
 
+    JSONArray musics;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,7 +41,7 @@ public class MusicGallery extends AppCompatActivity {
         this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN); //show the activity in full screen
         setContentView(R.layout.activity_music_gallery);
-        initiateMusic();
+        getMusic();
     }
 
 
@@ -60,82 +62,6 @@ public class MusicGallery extends AppCompatActivity {
         }
     }
 
-
-    class DownloadMusic extends AsyncTask<String, String, String> {
-            @Override
-            protected void onPreExecute() {
-                super.onPreExecute();
-            }
-
-            /**
-             * Downloading file in background thread
-             */
-            @Override
-            protected String doInBackground(String... f_url) {
-                int count;
-                try {
-                    URL url = new URL(f_url[0]);
-                    URLConnection connection = url.openConnection();
-                    connection.connect();
-
-                    // this will be useful so that you can show a tipical 0-100%
-                    // progress bar
-                    int lenghtOfFile = connection.getContentLength();
-
-                    // download the file
-                    InputStream input = new BufferedInputStream(url.openStream(),
-                            8192);
-
-                    // Output stream
-                    OutputStream output = new FileOutputStream(Environment.getExternalStorageDirectory() + "/Android/data/" + getPackageName() + "/music/");
-
-                    byte data[] = new byte[1024];
-
-                    long total = 0;
-
-                    while ((count = input.read(data)) != -1) {
-                        total += count;
-                        // publishing the progress....
-                        // After this onProgressUpdate will be called
-                        publishProgress("" + (int) ((total * 100) / lenghtOfFile));
-
-                        // writing data to file
-                        output.write(data, 0, count);
-                    }
-
-                    // flushing output
-                    output.flush();
-
-                    // closing streams
-                    output.close();
-                    input.close();
-
-                } catch (Exception e) {
-                    Log.e("Error: ", e.getMessage());
-                }
-
-                return null;
-            }
-
-            /**
-             * Updating progress bar
-             */
-            protected void onProgressUpdate(String... progress) {
-                // setting progress percentage
-                pDialog.setProgress(Integer.parseInt(progress[0]));
-            }
-
-            /**
-             * After completing background task Dismiss the progress dialog
-             **/
-            @Override
-            protected void onPostExecute(String file_url) {
-                // dismiss the dialog after the file was downloaded
-                dismissDialog(progress_bar_type);
-
-            }
-        }
-
         public void initiateMusic()
         {
             musicBack = findViewById(R.id.music_back);
@@ -146,10 +72,45 @@ public class MusicGallery extends AppCompatActivity {
                 }
             });
             gridView = (GridView) findViewById(R.id.music_grid);
-            gridView.setAdapter(new CustomAdapter(this, MUSICS,R.layout.music_details_list));
+            gridView.setAdapter(new CustomAdapter(this, musics,R.layout.music_details_list));
 
             gridView = (GridView) findViewById(R.id.dubs_grid);
-            gridView.setAdapter(new CustomAdapter(this, MUSICS,R.layout.music_dub_details_list));
+            gridView.setAdapter(new CustomAdapter(this, musics,R.layout.music_dub_details_list));
         }
 
+        public void getMusic(){
+            final Dialog dialog = new Dialog(context);
+            dialog.setTitle("Loading");
+            dialog.setContentView(R.layout.loading_layout);
+            dialog.setCancelable(false); // disable dismiss by tapping outside of the dialog
+            dialog.show();
+            final JSONObject data = new JSONObject();
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+            db.collection("musics")
+            .get()
+            .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                @Override
+                public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                    if (task.isSuccessful()) {
+                        ArrayList musicData = new ArrayList();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            String id = document.getId();
+                            JSONObject object = new JSONObject();
+                            try {
+                                object.put("id",id);
+                                object.put("data",new JSONObject(document.getData()));
+                                musicData.add(object);
+                            }catch(Exception e){
+                                System.out.println(e.getMessage());
+                            }
+                        }
+                        musics = new JSONArray(musicData);
+                        initiateMusic();
+                        dialog.hide();
+                    } else {
+                        Log.w("TEST", "Error getting documents.", task.getException());
+                    }
+                }
+            });
+        }
     }

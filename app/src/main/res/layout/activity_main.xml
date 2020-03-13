@@ -12,6 +12,7 @@
        android:layout_height="match_parent"
        android:id="@+id/CameraView"/>
     <LinearLayout
+        android:id="@+id/l_music"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
@@ -23,6 +24,31 @@
             android:layout_height="wrap_content"
             android:src="@drawable/ic_sound_btn"
             android:background="@null"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_below="@+id/l_music">
+        <TextView
+            android:id="@+id/music_selected"
+            android:ellipsize="marquee"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:singleLine="true"
+            android:scrollHorizontally="true"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:freezesText="true"
+            android:layout_width="115sp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp"
+            android:drawableStart="@drawable/ic_music"
+            android:drawablePadding="10sp"
+            android:text="Selected Music"
+            android:textColor="#FFFFFF"/>
     </LinearLayout>
     <LinearLayout
         android:layout_width="wrap_content"
