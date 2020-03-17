@@ -9,7 +9,7 @@
 
    <FrameLayout
        android:layout_width="match_parent"
-       android:layout_height="match_parent"
+       android:layout_height="wrap_content"
        android:id="@+id/CameraView"/>
     <LinearLayout
         android:id="@+id/l_music"
@@ -40,10 +40,12 @@
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:freezesText="true"
-            android:layout_width="115sp"
+            android:layout_width="120sp"
             android:layout_height="wrap_content"
             android:gravity="center"
             android:paddingLeft="5dp"
+            android:textSize="20sp"
+            android:textStyle="italic|bold"
             android:paddingRight="5dp"
             android:drawableStart="@drawable/ic_music"
             android:drawablePadding="10sp"

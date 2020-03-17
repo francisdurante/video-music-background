@@ -20,8 +20,8 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity android:name=".MusicGallery"></activity>
-        <activity android:name=".PreviewVideoActivity" />
-        <activity android:name=".MainActivity">
+        <activity android:name=".PreviewVideoActivity" android:theme="@style/AppThemeFull"/>
+        <activity android:name=".MainActivity" android:theme="@style/AppThemeFull">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

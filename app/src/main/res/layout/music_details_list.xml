@@ -7,6 +7,10 @@
     android:layout_height="wrap_content"
     android:padding="5sp"
     android:gravity="center">
+    <FrameLayout
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
     <ImageView
         android:adjustViewBounds="true"
         android:id="@+id/music_thumbnail"
@@ -14,6 +18,18 @@
         android:layout_height="wrap_content"
         android:maxWidth="50sp"
         android:maxHeight="50sp"/>
+    <ImageView
+        android:background="#4D686868"
+        android:layout_gravity="center"
+        android:id="@+id/selected_check"
+        android:adjustViewBounds="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxWidth="50sp"
+        android:maxHeight="50sp"
+        android:src="@drawable/ic_check"
+        android:visibility="gone"/>
+    </FrameLayout>
 
     <LinearLayout
         android:layout_width="match_parent"

@@ -30,6 +30,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
+
 import com.arthenica.mobileffmpeg.Config;
 import com.arthenica.mobileffmpeg.FFmpeg;
 
@@ -149,6 +151,11 @@ public class MainActivity extends Activity {
     private boolean prepareMediaRecorder(){
         myCamera = getCameraInstance();
 
+        Camera.Parameters parameters = myCamera.getParameters();
+        List<Camera.Size> sizes = parameters.getSupportedPreviewSizes();
+        Camera.Size optimalSize = getOptimalPreviewSize(sizes, getResources().getDisplayMetrics().widthPixels, getResources().getDisplayMetrics().heightPixels);
+        parameters.setPreviewSize(optimalSize.width,optimalSize.height);
+        myCamera.setParameters(parameters);
         // set the orientation here to enable portrait recording.
         setCameraDisplayOrientation(this,cameraUsing,myCamera);
 
@@ -171,7 +178,7 @@ public class MainActivity extends Activity {
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
         mediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
 
-        mediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_480P));
+        mediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH));
         mediaRecorder.setOutputFile(tempPath);
 
         timer = new CountDownTimer(duration, 1000) {
@@ -277,6 +284,12 @@ public class MainActivity extends Activity {
             // TODO Auto-generated method stub
             // The Surface has been created, now tell the camera where to draw the preview.
             try {
+
+                Camera.Parameters parameters = myCamera.getParameters();
+                List<Camera.Size> sizes = parameters.getSupportedPreviewSizes();
+                Camera.Size optimalSize = getOptimalPreviewSize(sizes, getResources().getDisplayMetrics().widthPixels, getResources().getDisplayMetrics().heightPixels);
+                parameters.setPreviewSize(optimalSize.width,optimalSize.height);
+                myCamera.setParameters(parameters);
                 mCamera.setPreviewDisplay(holder);
                 mCamera.startPreview();
                 inPreview = true;
@@ -472,7 +485,15 @@ public class MainActivity extends Activity {
         releaseMediaRecorder(); // release the MediaRecorder object
         String path = Environment.getExternalStorageDirectory() + "/Android/data/"+getPackageName()+"/music/";
         musicPath = path + "test_1.mp3";
-        addMusic(tempPath,musicPath,getFile().getPath(),context);
+        String renderedPath;
+        if(isSelectedMusic){
+            renderedPath = addMusic(tempPath,musicPath,getFile().getPath(),context);
+        }else{
+            renderedPath = tempPath;
+        }
+        Intent preview = new Intent(this,PreviewVideoActivity.class);
+        preview.putExtra("path",renderedPath);
+        startActivity(preview);
         //return to web
         timer.cancel();
         recording = false;
@@ -495,11 +516,49 @@ public class MainActivity extends Activity {
 
         setCameraDisplayOrientation(MainActivity.this, cameraId, myCamera);
         try {
-
             myCamera.setPreviewDisplay(surfaceHolder);
         } catch (IOException e) {
             e.printStackTrace();
         }
+        Camera.Parameters parameters = myCamera.getParameters();
+        List<Camera.Size> sizes = parameters.getSupportedPreviewSizes();
+        Camera.Size optimalSize = getOptimalPreviewSize(sizes, getResources().getDisplayMetrics().widthPixels, getResources().getDisplayMetrics().heightPixels);
+        parameters.setPreviewSize(optimalSize.width,optimalSize.height);
+        myCamera.setParameters(parameters);
         myCamera.startPreview();
+    }
+
+    private Camera.Size getOptimalPreviewSize(List<Camera.Size> sizes, int w, int h) {
+        final double ASPECT_TOLERANCE = 0.05;
+        double targetRatio = (double) w/h;
+
+        if (sizes==null) return null;
+
+        Camera.Size optimalSize = null;
+
+        double minDiff = Double.MAX_VALUE;
+
+        int targetWidth = 1500;
+
+        // Find size
+        for (Camera.Size size : sizes) {
+            double ratio = (double) size.width / size.height;
+            if (Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE) continue;
+            if (Math.abs(size.width - targetWidth) < minDiff) {
+                optimalSize = size;
+                minDiff = Math.abs(size.width - targetWidth);
+            }
+        }
+
+        if (optimalSize == null) {
+            minDiff = Double.MAX_VALUE;
+            for (Camera.Size size : sizes) {
+                if (Math.abs(size.width - targetWidth) < minDiff) {
+                    optimalSize = size;
+                    minDiff = Math.abs(size.width - targetWidth);
+                }
+            }
+        }
+        return optimalSize;
     }
 }
