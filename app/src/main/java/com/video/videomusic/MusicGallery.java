@@ -13,6 +13,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.EditText;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -24,6 +25,7 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
@@ -38,7 +40,8 @@ public class MusicGallery extends AppCompatActivity {
     Context context = this;
     private ProgressDialog pDialog;
     public static final int progress_bar_type = 0;
-    private GridView gridView;
+    private GridView musicGridView;
+    private GridView dubGridView;
     ImageView musicBack;
     TextView musicNext;
     Dialog dialog;
@@ -47,7 +50,11 @@ public class MusicGallery extends AppCompatActivity {
     JSONArray musics;
     JSONArray musicsdub;
     static String MGselectedMusic;
-    CustomAdapter adapter;
+    CustomAdapter musicAdapter;
+    CustomAdapter dubAdapter;
+
+    private EditText searchKey;
+    private TextView searchBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,10 +64,10 @@ public class MusicGallery extends AppCompatActivity {
         this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN); //show the activity in full screen
         setContentView(R.layout.activity_music_gallery);
-        getMusic();
+        getMusic(null); // first load
     }
 
-    public void initiateMusic()
+    public void initiateMusic(JSONArray music, JSONArray dub)
     {
         musicBack = findViewById(R.id.music_back);
         musicBack.setOnClickListener(new View.OnClickListener() {
@@ -69,12 +76,15 @@ public class MusicGallery extends AppCompatActivity {
                 finish();
             }
         });
-        gridView = (GridView) findViewById(R.id.music_grid);
-        adapter = new CustomAdapter(this, musics,R.layout.music_details_list);
-        gridView.setAdapter(adapter);
+        musicGridView = (GridView) findViewById(R.id.music_grid);
+        musicAdapter = new CustomAdapter(this, music,R.layout.music_details_list);
+        musicGridView.setAdapter(musicAdapter);
 
-        gridView = (GridView) findViewById(R.id.dubs_grid);
-        gridView.setAdapter(new CustomAdapter(this, musicsdub,R.layout.music_dub_details_list));
+
+        dubAdapter = new CustomAdapter(this, dub,R.layout.music_dub_details_list);
+
+        dubGridView = (GridView) findViewById(R.id.dubs_grid);
+        dubGridView.setAdapter(dubAdapter);
 
         musicNext = findViewById(R.id.next_button);
         musicNext.setOnClickListener(new View.OnClickListener() {
@@ -88,53 +98,94 @@ public class MusicGallery extends AppCompatActivity {
                 new DownloadMusic().execute(MGselectedMusic);
             }
         });
-        adapter.setMediaPlayer(new MediaPlayer());
+        musicAdapter.setMediaPlayer(new MediaPlayer());
+        dubAdapter.setMediaPlayer(new MediaPlayer());
+
+        searchKey = findViewById(R.id.search_key);
+        searchBtn = findViewById(R.id.search_btn);
+
+        searchBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getMusic(searchKey.getText().toString());
+            }
+        });
     }
 
-    public void getMusic(){
+    public void getMusic(final String searchKey){
         dialog = new Dialog(context);
         dialog.setTitle("Loading");
         dialog.setContentView(R.layout.loading_layout);
         dialog.setCancelable(false); // disable dismiss by tapping outside of the dialog
         dialog.show();
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("musics")
-        .get()
-        .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                if (task.isSuccessful()) {
-                    ArrayList musicData = new ArrayList();
-                    ArrayList musicDub = new ArrayList();
-                    for (QueryDocumentSnapshot document : task.getResult()) {
+        if(musics == null || musicsdub == null) {
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+            db.collection("musics")
+                    .get()
+                    .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                        @Override
+                        public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                            if (task.isSuccessful()) {
+                                ArrayList musicData = new ArrayList();
+                                ArrayList musicDub = new ArrayList();
+                                for (QueryDocumentSnapshot document : task.getResult()) {
 
-                        try {
-                            String id = document.getId();
-                            int category = new JSONObject(document.getData()).getInt("category");
-                            if(category == 0) {
-                                JSONObject backgroundMusic = new JSONObject();
-                                backgroundMusic.put("id", id);
-                                backgroundMusic.put("data", new JSONObject(document.getData()));
-                                musicData.add(backgroundMusic);
-                            }else{
-                                JSONObject dubMusic = new JSONObject();
-                                dubMusic.put("id", id);
-                                dubMusic.put("data", new JSONObject(document.getData()));
-                                musicDub.add(dubMusic);
+                                    try {
+                                        String id = document.getId();
+                                        int category = new JSONObject(document.getData()).getInt("category");
+                                        if (category == 0) {
+                                            JSONObject backgroundMusic = new JSONObject();
+                                            backgroundMusic.put("id", id);
+                                            backgroundMusic.put("data", new JSONObject(document.getData()));
+                                            backgroundMusic.put("title", document.getData().get("audio_name"));
+                                            musicData.add(backgroundMusic);
+                                        } else {
+                                            JSONObject dubMusic = new JSONObject();
+                                            dubMusic.put("id", id);
+                                            dubMusic.put("data", new JSONObject(document.getData()));
+                                            dubMusic.put("title", document.getData().get("audio_name"));
+                                            musicDub.add(dubMusic);
+                                        }
+                                    } catch (Exception e) {
+                                        System.out.println(e.getMessage());
+                                    }
+                                }
+                                musics = new JSONArray(musicData);
+                                musicsdub = new JSONArray(musicDub);
+
+                                initiateMusic(musics,musicsdub);
+                                dialog.hide();
+                            } else {
+                                Log.w("TEST", "Error getting documents.", task.getException());
                             }
-                        }catch(Exception e){
-                            System.out.println(e.getMessage());
                         }
+                    });
+        }else{
+            JSONArray music = sortItems(musics, searchKey);
+            JSONArray dub = sortItems(musicsdub,searchKey);
+            initiateMusic(music,dub);
+            dialog.hide();
+        }
+    }
+
+    JSONArray sortItems(JSONArray array, String searchValue){
+        if(!"".equals(searchValue)) {
+            JSONArray filteredArray = new JSONArray();
+            for (int i = 0; i < array.length(); i++) {
+                JSONObject obj = null;
+                try {
+                    obj = array.getJSONObject(i);
+                    if (obj.getString("title").toLowerCase().equals(searchValue.toLowerCase())) {
+                        filteredArray.put(obj);
                     }
-                    musics = new JSONArray(musicData);
-                    musicsdub = new JSONArray(musicDub);
-                    initiateMusic();
-                    dialog.hide();
-                } else {
-                    Log.w("TEST", "Error getting documents.", task.getException());
+                } catch (JSONException e) {
+                    e.printStackTrace();
                 }
             }
-        });
+            return filteredArray;
+        }else{
+            return array;
+        }
     }
 
     class DownloadMusic extends AsyncTask<String, String, String>{
@@ -205,9 +256,12 @@ public class MusicGallery extends AppCompatActivity {
          **/
         @Override
         protected void onPostExecute(String file_url) {
-            if(adapter.getMediaPlayer()!= null){
-                adapter.getMediaPlayer().stop();
-                adapter.setMediaPlayer(null);
+            if(musicAdapter.getMediaPlayer()!= null){
+                musicAdapter.getMediaPlayer().stop();
+                musicAdapter.setMediaPlayer(null);
+            }if(dubAdapter.getMediaPlayer()!= null){
+                dubAdapter.getMediaPlayer().stop();
+                dubAdapter.setMediaPlayer(null);
             }
             dialog.hide();
             dialog = null;
@@ -218,17 +272,22 @@ public class MusicGallery extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if(adapter.getMediaPlayer() != null){
-            adapter.getMediaPlayer().stop();
-            adapter.setMediaPlayer(null);
+        if(musicAdapter.getMediaPlayer() != null){
+            musicAdapter.getMediaPlayer().stop();
+            musicAdapter.setMediaPlayer(null);
+        }if(dubAdapter.getMediaPlayer() != null){
+            dubAdapter.getMediaPlayer().stop();
+            dubAdapter.setMediaPlayer(null);
         }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if(adapter.getMediaPlayer() != null){
-            adapter.getMediaPlayer().pause();
+        if(musicAdapter.getMediaPlayer() != null){
+            musicAdapter.getMediaPlayer().pause();
+        }if(dubAdapter.getMediaPlayer() != null){
+            dubAdapter.getMediaPlayer().pause();
         }
     }
 }

@@ -1,12 +1,8 @@
 package com.video.videomusic;
-
-import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.os.AsyncTask;
-import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,12 +19,12 @@ import static com.video.videomusic.MusicGallery.MGselectedMusic;
 
 public class CustomAdapter extends BaseAdapter{
     private Context context;
-    Dialog dialog;
+    private Dialog dialog;
     private final JSONArray musicData;
     private int layoutToPut;
-    String selectedMusic;
-    MediaPlayer mediaPlayer;
-    ImageView previousSelected;
+    private String selectedMusic;
+    private MediaPlayer mediaPlayer;
+    private ImageView previousSelected;
 
     CustomAdapter(Context context, JSONArray musicData, int layoutToPut) {
         this.context = context;

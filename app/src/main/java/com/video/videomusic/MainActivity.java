@@ -371,11 +371,11 @@ public class MainActivity extends Activity {
         }else {
             command = "-i " + videoInput +" -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 -shortest " + output;
         }
-            String path = "";
-            if (executeCMD(command)) {
-                path = output;
-            }
-            return path;
+        String path = "";
+        if (executeCMD(command)) {
+            path = output;
+        }
+        return path;
     }
 
     private boolean executeCMD(String cmd)
