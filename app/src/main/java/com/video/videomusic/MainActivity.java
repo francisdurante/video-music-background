@@ -2,6 +2,7 @@ package com.video.videomusic;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -10,6 +11,7 @@ import android.media.CamcorderProfile;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Environment;
@@ -19,18 +21,23 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import java.io.File;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import com.arthenica.mobileffmpeg.Config;
 import com.arthenica.mobileffmpeg.FFmpeg;
@@ -57,7 +64,6 @@ public class MainActivity extends Activity {
     private static final int MY_WRITE_REQUEST_CODE = 102;
     private static final int MY_RECORD_AUDIO_REQUEST_CODE = 103;
     boolean inPreview = false;
-    private int selectedDuration = 30000;
     TextView thirtyDuration = null;
     TextView fifteenDuration = null;
     TextView selectedMusic = null;
@@ -65,6 +71,10 @@ public class MainActivity extends Activity {
     ImageButton musicGallery;
     static boolean isSelectedMusic = false;
     static String musicName = "";
+    TextView countDown;
+    static int duration = 32000;
+    ImageButton userBack;
+    Animation animation;
 
     /** Called when the activity is first created. */
     @Override
@@ -94,35 +104,36 @@ public class MainActivity extends Activity {
         }
     }
 
-    Button.OnClickListener myButtonOnClickListener
-            = new Button.OnClickListener(){
+    Button.OnClickListener myButtonOnClickListener = new Button.OnClickListener(){
 
         @Override
         public void onClick(View v) {
-            // TODO Auto-generated method stub
-
-            try{
-                if(recording){
-                    stopRecording();
-                }else{
-                    releaseCamera();
-                    if(!prepareMediaRecorder()){
-                        Toast.makeText(MainActivity.this,
-                                "Fail in prepareMediaRecorder()!\n - Ended -",
-                                Toast.LENGTH_LONG).show();
-                        finish();
-                    }
-                    mediaRecorder.start();
-                    if(mediaPlayer != null && isSelectedMusic) {
-                        mediaPlayer.start();
-                    }
-                    recording = true;
-//                    myButton.setText("STOP");
+        try{
+            if(recording){
+                stopRecording();
+            }else{
+//                    releaseCamera();
+                v.startAnimation(animation);
+                if(!prepareMediaRecorder()){
+                    Toast.makeText(MainActivity.this,
+                            "Fail in prepareMediaRecorder()!\n - Ended -",
+                            Toast.LENGTH_LONG).show();
+                    finish();
                 }
-            }catch (Exception ex){
-                ex.printStackTrace();
+                if(isSelectedMusic) {
+                    CountDownTime timer = new CountDownTime(3000, 1000);
+                    timer.start(((Activity)context));
+                }else{
+                    mediaRecorder.start();
+                    timer.start();
+                }
+
+                recording = true;
             }
-        }};
+        }catch (Exception ex){
+            ex.printStackTrace();
+        }
+    }};
 
     Button.OnClickListener flipCameraOnClick = new Button.OnClickListener(){
         @Override
@@ -140,6 +151,11 @@ public class MainActivity extends Activity {
         Camera c = null;
         try {
             c = Camera.open(cameraUsing); // attempt to get a Camera instance
+            Camera.Parameters parameters = c.getParameters();
+            List<Camera.Size> sizes = parameters.getSupportedPreviewSizes();
+            Camera.Size optimalSize = getOptimalPreviewSize(sizes, getResources().getDisplayMetrics().widthPixels, getResources().getDisplayMetrics().heightPixels);
+            parameters.setPreviewSize(optimalSize.width,optimalSize.height);
+            c.setParameters(parameters);
         }
         catch (Exception e){
             // Camera is not available (in use or does not exist)
@@ -149,36 +165,19 @@ public class MainActivity extends Activity {
 
 
     private boolean prepareMediaRecorder(){
-        myCamera = getCameraInstance();
-
-        Camera.Parameters parameters = myCamera.getParameters();
-        List<Camera.Size> sizes = parameters.getSupportedPreviewSizes();
-        Camera.Size optimalSize = getOptimalPreviewSize(sizes, getResources().getDisplayMetrics().widthPixels, getResources().getDisplayMetrics().heightPixels);
-        parameters.setPreviewSize(optimalSize.width,optimalSize.height);
-        myCamera.setParameters(parameters);
+//        myCamera = getCameraInstance();
         // set the orientation here to enable portrait recording.
-        setCameraDisplayOrientation(this,cameraUsing,myCamera);
-
-        mediaRecorder = new MediaRecorder();
+//        setCameraDisplayOrientation(this,cameraUsing,myCamera);
+        if(isSelectedMusic) mediaPlayer = MediaPlayer.create(context, Uri.parse(musicPath));
         myCamera.unlock();
 
         mediaRecorder.setCamera(myCamera);
-        String path = Environment.getExternalStorageDirectory() + "/Android/data/"+getPackageName()+"/music/";
-        musicPath = path + "test_1.mp3";
-
-        int duration = selectedDuration;
-
+        int duration = MainActivity.duration;
         tempPath = getFile().getPath();
-
-        if(!"".equals(musicPath) && isSelectedMusic) {
-            mediaPlayer = MediaPlayer.create(context, Uri.parse(musicPath));
-            duration = mediaPlayer.getDuration();
-            tempPath = tempGetFile().getPath();
-        }
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
         mediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
 
-        mediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH));
+        mediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_480P));
         mediaRecorder.setOutputFile(tempPath);
 
         timer = new CountDownTimer(duration, 1000) {
@@ -189,7 +188,7 @@ public class MainActivity extends Activity {
             public void onFinish() {
                 stopRecording();
             }
-        }.start();
+        };
 
         mediaRecorder.setPreviewDisplay(myCameraSurfaceView.getHolder().getSurface());
         mediaRecorder.setOrientationHint(MainActivity.orientation);
@@ -205,18 +204,16 @@ public class MainActivity extends Activity {
         return true;
 
     }
-
+    @Override
+    protected void onResume() {
+        super.onResume();
+        initCamera();
+    }
     @Override
     protected void onPause() {
         super.onPause();
         releaseMediaRecorder();       // if you are using MediaRecorder, release it first
         releaseCamera();              // release the camera immediately on pause event
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        initCamera();
     }
 
     private void releaseMediaRecorder(){
@@ -254,18 +251,16 @@ public class MainActivity extends Activity {
             mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         }
 
-        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
-        {
+        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
             try {
-                setCameraDisplayOrientation(mActivity,cameraUsing,mCamera);
+                setCameraDisplayOrientation(mActivity, cameraUsing, mCamera);
                 previewCamera();
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
-        public void previewCamera()
-        {
+        public void previewCamera(){
             try
             {
                 mCamera.setPreviewDisplay(mHolder);
@@ -277,7 +272,6 @@ public class MainActivity extends Activity {
                 //Log.d(APP_CLASS, "Cannot start preview", e);
             }
         }
-
 
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
@@ -302,8 +296,6 @@ public class MainActivity extends Activity {
             // TODO Auto-generated method stub
 
         }
-
-
     }
 
     public static void setCameraDisplayOrientation(Activity activity,int cameraId, android.hardware.Camera camera) {
@@ -324,69 +316,82 @@ public class MainActivity extends Activity {
         }
         int result;
         if (cameraId == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-            result = (info.orientation + degrees) % 360;
+            result = (info.orientation + 360) % 360;
             result = (360 - result) % 360;  // compensate the mirror
+            MainActivity.orientation = 270;
         } else {  // back-facing
             result = (info.orientation - degrees + 360) % 360;
+            MainActivity.orientation = result;
         }
-        MainActivity.orientation =  (info.orientation + degrees) % 360;
         camera.setDisplayOrientation(result);
     }
 
-    public File getFile()
-    {
+    public File getFile() {
         File folder = new File(Environment.getExternalStorageDirectory() + "/Fleek");
-        if(!folder.exists())
-        {
+        if (!folder.exists()) {
             folder.mkdir();
         }
 
-        return new File(folder,fileName());
+        return new File(folder, fileName());
     }
 
-    public File tempGetFile()
-    {
-        File folder = new File(Environment.getExternalStorageDirectory() + "/Android/data/"+getPackageName()+"/cache");
+    public File tempGetFile() {
+        File folder = new File(Environment.getExternalStorageDirectory() + "/Android/data/" + getPackageName() + "/cache");
         System.out.println(folder.getAbsolutePath());
-        if(!folder.exists())
-        {
+        if (!folder.exists()) {
             folder.mkdirs();
         }
-
-        return new File(folder,"temp_video_fleek.mp4");
+        File fileName = new File(folder, "temp_video_fleek.mp4");
+        if (fileName.exists()) {
+            fileName.delete();
+        }
+        return fileName;
     }
 
-    public String fileName()
-    {
+    public String fileName() {
         Date date = Calendar.getInstance().getTime();
         DateFormat dateFormat = new SimpleDateFormat("yyyymmddhhmmss");
         return "Fleek-" + dateFormat.format(date) + ".mp4";
     }
 
-    public String addMusic(String videoInput, String audioInput, String output, Context context)
-    {
-        String command;
-        if(isSelectedMusic) {
-            command = "-i " + videoInput + " -i " + audioInput + " -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 -shortest " + output;
-        }else {
-            command = "-i " + videoInput +" -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 -shortest " + output;
-        }
+    public String addMusic(String videoInput, String audioInput, String output, Context context) {
         String path = "";
-        if (executeCMD(command)) {
-            path = output;
+        if (isSelectedMusic) {
+            String commandMergeMusicToVideo;
+            String commandCorrectMirrorEffect;
+            String tempOutput = tempGetFile().getAbsolutePath();
+            commandMergeMusicToVideo = "-i " + videoInput + " -i " + audioInput + " -vcodec copy -acodec copy -map 0:0 -map 1:0  -shortest " + tempOutput;
+            if (executeCMD(commandMergeMusicToVideo)) {
+                if (cameraUsing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+                    commandCorrectMirrorEffect = "-i " + tempOutput + " -qscale 0 -vf transpose=3,transpose=2 " + output;
+                } else {
+                    commandCorrectMirrorEffect = "-i " + tempOutput + " -qscale 0 " + output;
+                }
+                if (executeCMD(commandCorrectMirrorEffect)) {
+                    path = output;
+                }
+            }
+        } else {
+            String toCorrectMirrorEffect;
+            if (cameraUsing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+                toCorrectMirrorEffect = "-i " + videoInput + " -qscale 0 -vf transpose=3,transpose=2 " + output;
+            } else {
+                toCorrectMirrorEffect = "-i " + videoInput + " -qscale 0 " + output;
+            }
+            if (executeCMD(toCorrectMirrorEffect)) {
+                path = output;
+            }
         }
         return path;
     }
 
-    private boolean executeCMD(String cmd)
-    {
+    private boolean executeCMD(String cmd){
         int rc = FFmpeg.execute(cmd);
         if (rc == RETURN_CODE_SUCCESS) {
            return true;
         } else if (rc == RETURN_CODE_CANCEL) {
           return false;
         } else {
-            Config.printLastCommandOutput(Log.INFO);
             return false;
         }
     }
@@ -418,9 +423,13 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void initCamera()
-    {
+    private void initCamera(){
+        releaseCamera();
+        animation = AnimationUtils.loadAnimation(context,R.anim.zoomin);
         myCamera = getCameraInstance();
+        mediaRecorder = new MediaRecorder();
+        String path = Environment.getExternalStorageDirectory() + "/Android/data/"+getPackageName()+"/music/";
+        musicPath = path + "test_1.mp3";
         if(myCamera == null){
             Toast.makeText(MainActivity.this,
                     "Fail to get Camera",
@@ -448,7 +457,7 @@ public class MainActivity extends Activity {
             public void onClick(View v) {
                 thirtyDuration.setTextSize(15);
                 fifteenDuration.setTextSize(12);
-                selectedDuration = 30;
+                duration = 32000;
             }
         });
         fifteenDuration.setOnClickListener(new View.OnClickListener() {
@@ -456,7 +465,7 @@ public class MainActivity extends Activity {
             public void onClick(View v) {
                 fifteenDuration.setTextSize(15);
                 thirtyDuration.setTextSize(12);
-                selectedDuration = 15;
+                duration = 17000;
             }
         });
 
@@ -464,7 +473,7 @@ public class MainActivity extends Activity {
         musicGallery.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(context,MusicGallery.class));
+                if(!recording) startActivity(new Intent(context,MusicGallery.class));
             }
         });
         selectedMusic.setVisibility(View.GONE);
@@ -473,59 +482,63 @@ public class MainActivity extends Activity {
             selectedMusic.setVisibility(View.VISIBLE);
             selectedMusic.setText(musicName);
         }
+
+        countDown = findViewById(R.id.countdown);
+        userBack = findViewById(R.id.user_cancel);
+
+        userBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(!recording){
+                    //return to web
+                }
+            }
+        });
     }
 
-    public void stopRecording()
-    {
+    public void stopRecording(){
         // stop recording and release camera
+        myButton.clearAnimation();
         mediaRecorder.stop();  // stop the recording
         if(mediaPlayer != null) {
             mediaPlayer.stop();
         }
-        releaseMediaRecorder(); // release the MediaRecorder object
-        String path = Environment.getExternalStorageDirectory() + "/Android/data/"+getPackageName()+"/music/";
-        musicPath = path + "test_1.mp3";
-        String renderedPath;
-        if(isSelectedMusic){
-            renderedPath = addMusic(tempPath,musicPath,getFile().getPath(),context);
-        }else{
-            renderedPath = tempPath;
-        }
-        Intent preview = new Intent(this,PreviewVideoActivity.class);
-        preview.putExtra("path",renderedPath);
-        startActivity(preview);
-        //return to web
         timer.cancel();
-        recording = false;
+        releaseMediaRecorder(); // release the MediaRecorder object
+        musicPath = Environment.getExternalStorageDirectory() + "/Android/data/"+getPackageName()+"/music/test_1.mp3";
+        FFmpegBackground task = new FFmpegBackground(context);
+        task.execute();
     }
 
-    public void flipCamera(int cameraId)
-    {
-        if (inPreview) {
-            myCamera.stopPreview();
-        }
-        myCamera.release();
-        int cameraToUse;
-        if (cameraId == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-            cameraToUse =  Camera.CameraInfo.CAMERA_FACING_BACK;
-        }else{
-            cameraToUse =  Camera.CameraInfo.CAMERA_FACING_FRONT;
-        }
-        myCamera = Camera.open(cameraToUse);
-        cameraUsing = cameraToUse;
+    public void flipCamera(int cameraId){
+        if(!recording) {
+            if (inPreview) {
+                myCamera.stopPreview();
+            }
+            myCamera.release();
+            int cameraToUse;
+            if (cameraId == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+                cameraToUse = Camera.CameraInfo.CAMERA_FACING_BACK;
+            } else {
+                cameraToUse = Camera.CameraInfo.CAMERA_FACING_FRONT;
+            }
+            myCamera = Camera.open(cameraToUse);
+            cameraUsing = cameraToUse;
 
-        setCameraDisplayOrientation(MainActivity.this, cameraId, myCamera);
-        try {
-            myCamera.setPreviewDisplay(surfaceHolder);
-        } catch (IOException e) {
-            e.printStackTrace();
+
+            setCameraDisplayOrientation(MainActivity.this, cameraUsing, myCamera);
+            try {
+                myCamera.setPreviewDisplay(surfaceHolder);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            Camera.Parameters parameters = myCamera.getParameters();
+            List<Camera.Size> sizes = parameters.getSupportedPreviewSizes();
+            Camera.Size optimalSize = getOptimalPreviewSize(sizes, getResources().getDisplayMetrics().widthPixels, getResources().getDisplayMetrics().heightPixels);
+            parameters.setPreviewSize(optimalSize.width, optimalSize.height);
+            myCamera.setParameters(parameters);
+            myCamera.startPreview();
         }
-        Camera.Parameters parameters = myCamera.getParameters();
-        List<Camera.Size> sizes = parameters.getSupportedPreviewSizes();
-        Camera.Size optimalSize = getOptimalPreviewSize(sizes, getResources().getDisplayMetrics().widthPixels, getResources().getDisplayMetrics().heightPixels);
-        parameters.setPreviewSize(optimalSize.width,optimalSize.height);
-        myCamera.setParameters(parameters);
-        myCamera.startPreview();
     }
 
     private Camera.Size getOptimalPreviewSize(List<Camera.Size> sizes, int w, int h) {
@@ -560,5 +573,92 @@ public class MainActivity extends Activity {
             }
         }
         return optimalSize;
+    }
+
+    void startRecording(){
+        mediaRecorder.start();
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        mediaPlayer.start();
+        timer.start();
+    }
+
+    public class CountDownTime extends CountDownTimer {
+        private WeakReference<Activity> mActivityRef;
+        private String mCurrentTime;
+        private boolean mStarted;
+        TextView textView;
+
+        public CountDownTime(long millisInFuture, long countDownInterval) {
+            super(millisInFuture, countDownInterval);
+        }
+        public void start(Activity activity) {
+            mActivityRef = new WeakReference<Activity>(activity);
+            if (!mStarted) {
+                mStarted = true;
+                start();
+            } else {
+                updateTextView();
+            }
+        }
+        @Override
+        public void onTick(long millisUntilFinished) {
+            long millis = millisUntilFinished;
+            mCurrentTime = String.format("%d",TimeUnit.MILLISECONDS.toSeconds(millis) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millis)));
+            updateTextView();
+        }
+
+        @Override
+        public void onFinish() {
+            startRecording();
+            textView.setVisibility(View.GONE);
+            mStarted = false;
+        }
+
+        private void updateTextView() {
+            Activity activity = mActivityRef.get();
+            if (activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
+                textView = (TextView) activity.findViewById(R.id.countdown);
+                textView.setVisibility(View.VISIBLE);
+                textView.setText(mCurrentTime);
+            }
+        }
+    }
+
+    private class FFmpegBackground extends AsyncTask<String, Void, String> {
+        Context context;
+        Dialog dialog;
+
+        public FFmpegBackground(Context context){
+            this.context = context;
+             dialog = new Dialog(context);
+        }
+        @Override
+        protected String doInBackground(String... params) {
+            return addMusic(tempPath,musicPath,getFile().getPath(),context);
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            Intent preview = new Intent(context,PreviewVideoActivity.class);
+            preview.putExtra("path",result);
+            startActivity(preview);
+            dialog.hide();
+            recording = false;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            dialog.setContentView(R.layout.loading_layout);
+            dialog.setCancelable(false);
+            dialog.show();
+        }
+
+        @Override
+        protected void onProgressUpdate(Void... values) {
+        }
     }
 }

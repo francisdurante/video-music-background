@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.support.annotation.NonNull;
@@ -29,6 +30,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -199,6 +201,7 @@ public class MusicGallery extends AppCompatActivity {
         @Override
         protected String doInBackground(String... f_url) {
             int count;
+            OutputStream output;
             try {
                 URL url = new URL(f_url[0]);
                 URLConnection connection = url.openConnection();
@@ -213,7 +216,11 @@ public class MusicGallery extends AppCompatActivity {
                         8192);
 
                 // Output stream
-                OutputStream output = new FileOutputStream(Environment.getExternalStorageDirectory() + "/Android/data/" + context.getPackageName() + "/music/test_1.mp3");
+                File music = new File(Environment.getExternalStorageDirectory() + "/Android/data/" + context.getPackageName() + "/music/");
+                if(!music.exists()){
+                    music.mkdir();
+                }
+                output = new FileOutputStream(Environment.getExternalStorageDirectory() + "/Android/data/" + context.getPackageName() + "/music/test_1.mp3");
 
                 byte data[] = new byte[1024];
 
@@ -240,7 +247,7 @@ public class MusicGallery extends AppCompatActivity {
                 //
             }
 
-            return null;
+            return Environment.getExternalStorageDirectory() + "/Android/data/" + context.getPackageName() + "/music/test_1.mp3";
         }
 
         /**
@@ -263,6 +270,10 @@ public class MusicGallery extends AppCompatActivity {
                 dubAdapter.getMediaPlayer().stop();
                 dubAdapter.setMediaPlayer(null);
             }
+            mediaPlayer = new MediaPlayer();
+            mediaPlayer = MediaPlayer.create(context, Uri.parse(file_url));
+            MainActivity.duration = mediaPlayer.getDuration() + 2000;
+            System.out.println(mediaPlayer.getDuration() + " aaaaaaaaaaaaaaa ");
             dialog.hide();
             dialog = null;
             finish();

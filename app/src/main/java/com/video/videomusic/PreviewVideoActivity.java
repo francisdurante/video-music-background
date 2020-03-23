@@ -51,8 +51,7 @@ public class PreviewVideoActivity extends AppCompatActivity {
         delete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                dialog = initPopup();
-                dialog.show();
+                initPopup().show();
             }
         });
 
@@ -84,17 +83,16 @@ public class PreviewVideoActivity extends AppCompatActivity {
                 if(file.exists()){
                     file.delete();
                 }
+                dialog.hide();
                 finish();
             }
         });
-
-        return dialog;
+       return dialog;
     }
 
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        dialog = initPopup();
-        dialog.show();
+        initPopup().show();
     }
 }
