@@ -6,6 +6,8 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.hardware.Camera;
 import android.media.CamcorderProfile;
 import android.media.MediaPlayer;
@@ -30,6 +32,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.text.DateFormat;
@@ -75,7 +78,6 @@ public class MainActivity extends Activity {
     static int duration = 32000;
     ImageButton userBack;
     Animation animation;
-
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -179,6 +181,7 @@ public class MainActivity extends Activity {
 
         mediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_480P));
         mediaRecorder.setOutputFile(tempPath);
+        mediaRecorder.setMaxDuration(30000);
 
         timer = new CountDownTimer(duration, 1000) {
             @Override
@@ -335,13 +338,13 @@ public class MainActivity extends Activity {
         return new File(folder, fileName());
     }
 
-    public File tempGetFile() {
+    public File tempGetFile(String name) {
         File folder = new File(Environment.getExternalStorageDirectory() + "/Android/data/" + getPackageName() + "/cache");
         System.out.println(folder.getAbsolutePath());
         if (!folder.exists()) {
             folder.mkdirs();
         }
-        File fileName = new File(folder, "temp_video_fleek.mp4");
+        File fileName = new File(folder, name);
         if (fileName.exists()) {
             fileName.delete();
         }
@@ -355,34 +358,39 @@ public class MainActivity extends Activity {
     }
 
     public String addMusic(String videoInput, String audioInput, String output, Context context) {
-        String path = "";
-        if (isSelectedMusic) {
-            String commandMergeMusicToVideo;
-            String commandCorrectMirrorEffect;
-            String tempOutput = tempGetFile().getAbsolutePath();
-            commandMergeMusicToVideo = "-i " + videoInput + " -i " + audioInput + " -vcodec copy -acodec copy -map 0:0 -map 1:0  -shortest " + tempOutput;
-            if (executeCMD(commandMergeMusicToVideo)) {
-                if (cameraUsing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-                    commandCorrectMirrorEffect = "-i " + tempOutput + " -qscale 0 -vf transpose=3,transpose=2 " + output;
-                } else {
-                    commandCorrectMirrorEffect = "-i " + tempOutput + " -qscale 0 " + output;
-                }
-                if (executeCMD(commandCorrectMirrorEffect)) {
-                    path = output;
-                }
-            }
-        } else {
-            String toCorrectMirrorEffect;
-            if (cameraUsing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-                toCorrectMirrorEffect = "-i " + videoInput + " -qscale 0 -vf transpose=3,transpose=2 " + output;
-            } else {
-                toCorrectMirrorEffect = "-i " + videoInput + " -qscale 0 " + output;
-            }
-            if (executeCMD(toCorrectMirrorEffect)) {
-                path = output;
-            }
-        }
-        return path;
+
+//        String path = "";
+//        if (isSelectedMusic) {
+//            String commandMergeMusicToVideo;
+//            String commandCorrectMirrorEffect;
+//            String tempOutput = tempGetFile("temp_video_fleek.mp4").getAbsolutePath();
+//
+//            commandMergeMusicToVideo = "-i " + videoInput + " -i " + audioInput + " -vcodec copy -acodec copy -map 0:0 -map 1:0  -shortest " + tempOutput;
+//            if (executeCMD(commandMergeMusicToVideo)) {
+//                if (cameraUsing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+//                    commandCorrectMirrorEffect = "-i " + tempOutput + " -qscale 0 -vf transpose=3,transpose=2 " + output;
+//                } else {
+//                    commandCorrectMirrorEffect = "-i " + tempOutput + " -qscale 0 " + output;
+//                }
+//                if (executeCMD(commandCorrectMirrorEffect)) {
+//                    path = output;
+//                }
+//            }
+//        } else {
+//            String toCorrectMirrorEffect;
+//            if (cameraUsing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+//                toCorrectMirrorEffect = "-i " + videoInput + " -qscale 0 -vf transpose=3,transpose=2 " + output;
+//            } else {
+//                toCorrectMirrorEffect = "-i " + videoInput +" -qscale 0 "+ output;
+//            }
+//            if (executeCMD(toCorrectMirrorEffect)) {
+//                path = output;
+//            }
+//        }
+//        return path;
+        File goodQuality = getGoodQualityVideo(videoInput);
+//        File watermarkedVideo = putWatermark(goodQuality);
+        return addMusic(goodQuality,audioInput,output);
     }
 
     private boolean executeCMD(String cmd){
@@ -424,6 +432,7 @@ public class MainActivity extends Activity {
     }
 
     private void initCamera(){
+        saveWatermarkToPhone();
         releaseCamera();
         animation = AnimationUtils.loadAnimation(context,R.anim.zoomin);
         myCamera = getCameraInstance();
@@ -498,12 +507,12 @@ public class MainActivity extends Activity {
 
     public void stopRecording(){
         // stop recording and release camera
+        timer.cancel();
         myButton.clearAnimation();
         mediaRecorder.stop();  // stop the recording
         if(mediaPlayer != null) {
             mediaPlayer.stop();
         }
-        timer.cancel();
         releaseMediaRecorder(); // release the MediaRecorder object
         musicPath = Environment.getExternalStorageDirectory() + "/Android/data/"+getPackageName()+"/music/test_1.mp3";
         FFmpegBackground task = new FFmpegBackground(context);
@@ -586,6 +595,22 @@ public class MainActivity extends Activity {
         timer.start();
     }
 
+    void saveWatermarkToPhone(){
+        Bitmap bm = BitmapFactory.decodeResource( getResources(), R.drawable.fleek_svg);
+        File folder = new File(Environment.getExternalStorageDirectory() + "/Android/data/" + getPackageName() + "/cache");
+        File file = new File(folder,"watermark.png");
+        if(!file.exists()) {
+            try {
+                FileOutputStream outStream = new FileOutputStream(file);
+                bm.compress(Bitmap.CompressFormat.PNG, 80, outStream);
+                outStream.flush();
+                outStream.close();
+            } catch (Exception e) {
+                //;
+            }
+        }
+    }
+
     public class CountDownTime extends CountDownTimer {
         private WeakReference<Activity> mActivityRef;
         private String mCurrentTime;
@@ -660,5 +685,57 @@ public class MainActivity extends Activity {
         @Override
         protected void onProgressUpdate(Void... values) {
         }
+    }
+
+    File getGoodQualityVideo(String videoInput){
+        File goodQualityVideoFolder = new File(Environment.getExternalStorageDirectory() + "/Android/data/" + getPackageName() + "/cache");
+        File goodQualityVideo = new File(goodQualityVideoFolder,"temp_good_quality.mp4");
+        if(goodQualityVideo.exists()){
+            goodQualityVideo.delete();
+        }
+        String command;
+       if(cameraUsing == Camera.CameraInfo.CAMERA_FACING_FRONT){
+           command = "-i " + videoInput + " -qscale 0 -vf transpose=3,transpose=2 " + goodQualityVideo.getAbsolutePath();
+       }else{
+           command = "-i " + videoInput + " -qscale 0 " + goodQualityVideo.getAbsolutePath();
+       }
+       if(executeCMD(command)){
+           return goodQualityVideo;
+       }else{
+           return null;
+       }
+    }
+
+    File putWatermark(File videoInput){
+        final String watermark = Environment.getExternalStorageDirectory() + "/Android/data/" + getPackageName() + "/cache/watermark.png";
+        File goodQualityVideoFolder = new File(Environment.getExternalStorageDirectory() + "/Android/data/" + getPackageName() + "/cache");
+        File watermarkedVideo = new File(goodQualityVideoFolder,"temp_watermarked_video.mp4");
+        if(watermarkedVideo.exists()){
+            watermarkedVideo.delete();
+        }
+        String command = "-i " + videoInput.getAbsolutePath() + " -i " + watermark + " -filter_complex  'overlay=x=(main_w-overlay_w):y=(main_h-overlay_h)' " + watermarkedVideo.getAbsolutePath();
+        if(executeCMD(command)){
+            if(videoInput.exists()) videoInput.delete();
+            return watermarkedVideo;
+        }else{
+            return null;
+        }
+    }
+
+    String addMusic(File videoInput,String audioInput, String finalOutput){
+        String path = "";
+        if(isSelectedMusic){
+            String command =  "-i " + videoInput.getAbsolutePath() + " -i " + audioInput + " -vcodec copy -acodec copy -map 0:0 -map 1:0  -shortest " + finalOutput;
+            if(executeCMD(command)){
+                if(videoInput.exists()) videoInput.delete();
+                path = finalOutput;
+            }
+        }else{
+            String command = "-i " + videoInput + " -qscale 0 " + finalOutput;
+            if(executeCMD(command)){
+                path = finalOutput;
+            }
+        }
+        return path;
     }
 }
